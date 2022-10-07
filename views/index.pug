@@ -54,3 +54,39 @@ html
             button.btn.btn-outline-light
               i.fa-brands.fa-bitcoin.me-2
               |  SEND
+
+    script.
+        Pusher.host = 'pusher.chain.so'; // our server
+        Pusher.ws_port = 443;
+        Pusher.wss_port = 443;
+
+        // create the pusher client connection
+        let pusher = new Pusher('e9f5cc20074501ca7395', {
+            encrypted: true,
+            disabledTransports: ['sockjs'],
+            disableStats: true
+        });
+
+        // subscribe to the channel for address balance updates (new transactions only)
+        let ticker = pusher.subscribe('address_btctest_#{address}');
+        ticker.bind('balance_update', function (data) {
+            console.log(data);
+            if (data.type === "address") {
+                const notificationFactory = window.createNotification({
+                    showDuration: 10000,
+                    theme: "success"
+                });
+                if (parseFloat(data.value.value_received).toFixed(8) !== "0.00000000") {
+                    notificationFactory({
+                        title: 'BTC Received',
+                        message: 'You received ' + data.value.value_received + " BTC 🎉."
+                    });
+                }
+                if (parseFloat(data.value.value_sent).toFixed(8) !== "0.00000000") {
+                    notificationFactory({
+                        title: 'BTC Sent',
+                        message: 'You sent ' + data.value.value_received + " BTC 🎉."
+                    });
+                }
+            }
+        });
