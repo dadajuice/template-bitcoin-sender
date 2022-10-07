@@ -2,15 +2,15 @@ let express = require('express');
 let router = express.Router();
 
 const bitcore = require("bitcore-lib");
-const axios = require("axios");
+const axios = require("axios").default;
 
 const network = "BTCTEST";
 const privateKey = "91qCQe7bkDj4jYiHgJUxhpye8ErNNnwK9vJEKiFGD6TBf1EGa4m";
 const publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
 
-router.get('/', function(req, res) {
+router.get('/', async function(req, res) {
     res.render('index', {
-        balance: getBalance(publicAddress),
+        balance: await getBalance(publicAddress),
         error: req.flash('error'),
         success: req.flash('success'),
         address: publicAddress
@@ -100,6 +100,8 @@ async function sendBitcoin(toAddress, btcAmount) {
     transaction.fee(fee);
     transaction.change(publicAddress);
     transaction.sign(privateKey);
+
+    const serializedTransaction = transaction.serialize();
 
     const result = await axios({
         method: "POST",
