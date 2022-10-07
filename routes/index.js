@@ -1,8 +1,14 @@
 let express = require('express');
 let router = express.Router();
 
+const bitcore = require("bitcore-lib");
+const axios = require("axios");
+
+const network = "BTCTEST";
+const privateKey = "91qCQe7bkDj4jYiHgJUxhpye8ErNNnwK9vJEKiFGD6TBf1EGa4m";
+const publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
+
 router.get('/', function(req, res) {
-    let publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
     res.render('index', {
         balance: getBalance(publicAddress),
         error: req.flash('error'),
@@ -41,9 +47,13 @@ router.post('/', async function (req, res) {
     res.redirect("/");
 });
 
-function getBalance(address) {
-    // TODO: Retrieve the real BTC balance for a given address
-    return parseFloat("0").toFixed(8);
+async function getBalance(address) {
+    const url = `https://chain.so/api/v2/get_address_balance/${network}/${address}`;
+    const result = await axios.get(url);
+    const data = result.data.data;
+    const confirmedBalance = parseFloat(data.confirmed_balance);
+    const unconfirmedBalance = parseFloat(data.unconfirmed_balance);
+    return (confirmedBalance + unconfirmedBalance).toFixed(8);
 }
 
 function sendBitcoin(toAddress, btcAmount) {
