@@ -1,8 +1,9 @@
 let express = require('express');
 let router = express.Router();
 
+const publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
+
 router.get('/', function(req, res) {
-    let publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
     res.render('index', {
         balance: getBalance(publicAddress),
         error: req.flash('error'),
