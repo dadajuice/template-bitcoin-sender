@@ -4,7 +4,7 @@ let router = express.Router();
 router.get('/', function(req, res) {
     let publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
     res.render('index', {
-        balance: "0.00000",
+        balance: getBalance(publicAddress),
         error: req.flash('error'),
         success: req.flash('success'),
         address: publicAddress
@@ -12,16 +12,16 @@ router.get('/', function(req, res) {
 });
 
 router.post('/', async function (req, res) {
-    let amount = req.body.amount;
+    let btcAmount = req.body.amount;
     let address = req.body.address;
 
-    if (amount === undefined || amount === "") {
+    if (btcAmount === undefined || btcAmount === "") {
         req.flash('error', "The amount to sent must be given.");
         res.redirect("/");
         return;
     }
 
-    if (isNaN(amount)) {
+    if (isNaN(btcAmount)) {
         req.flash('error', "The amount must be numeric.");
         res.redirect("/");
         return;
@@ -35,9 +35,19 @@ router.post('/', async function (req, res) {
 
     // TODO: Test if the given BTC address is valid for the given network ...
 
-    req.flash('success', amount + " BTC sent successfully to " + address
+    sendBitcoin(address, btcAmount);
+    req.flash('success', btcAmount + " BTC sent successfully to " + address
         + ". I may take up to few minutes before the transaction is completed.");
     res.redirect("/");
 });
+
+function getBalance(address) {
+    // TODO: Retrieve the real BTC balance for a given address
+    return parseFloat("0").toFixed(8);
+}
+
+function sendBitcoin(toAddress, btcAmount) {
+    // TODO: Proceed to do the real transfer ...
+}
 
 module.exports = router;
