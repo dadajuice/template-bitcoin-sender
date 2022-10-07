@@ -39,7 +39,11 @@ router.post('/', async function (req, res) {
         return;
     }
 
-    // TODO: Test if the given BTC address is valid for the given network ...
+    if (!bitcore.Address.isValid(address, bitcore.Networks.testnet)) {
+        req.flash('error', "Invalid recipient address given. Be sure to use a valid BTC address on the test network.");
+        res.redirect("/");
+        return;
+    }
 
     sendBitcoin(address, btcAmount);
     req.flash('success', btcAmount + " BTC sent successfully to " + address
