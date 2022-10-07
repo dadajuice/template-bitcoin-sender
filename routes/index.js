@@ -44,11 +44,16 @@ router.post('/', async function (req, res) {
         res.redirect("/");
         return;
     }
-
-    sendBitcoin(address, btcAmount);
-    req.flash('success', btcAmount + " BTC sent successfully to " + address
-        + ". I may take up to few minutes before the transaction is completed.");
-    res.redirect("/");
+    try {
+        const result = await sendBitcoin(address, btcAmount);
+        console.log(result);
+        req.flash('success', btcAmount + " BTC sent successfully to " + address
+            + ". I may take up to few minutes before the transaction is completed.");
+        res.redirect("/");
+    } catch (e) {
+        req.flash('error', e.message);
+        res.redirect("/");
+    }
 });
 
 async function getBalance(address) {
@@ -60,8 +65,50 @@ async function getBalance(address) {
     return (confirmedBalance + unconfirmedBalance).toFixed(8);
 }
 
-function sendBitcoin(toAddress, btcAmount) {
-    // TODO: Proceed to do the real transfer ...
+async function sendBitcoin(toAddress, btcAmount) {
+    const satoshiToSend = Math.ceil(btcAmount * 100000000);
+    const txUrl = `https://sochain.com/api/v2/get_tx_unspent/${network}/${publicAddress}`;
+    const txResult = await axios.get(txUrl);
+
+    let inputs = [];
+    let totalAmountAvailable = 0;
+    let inputCount = 0;
+    for (const element of txResult.data.data.txs) {
+        let utx = {};
+        utx.satoshis = Math.floor(Number(element.value) * 100000000);
+        utx.script = element.script_hex;
+        utx.address = txResult.data.data.address;
+        utx.txId = element.txid;
+        utx.outputIndex = element.output_no;
+        totalAmountAvailable += utx.satoshis;
+        inputCount += 1;
+        inputs.push(utx);
+    }
+
+    const transaction = new bitcore.Transaction();
+    transaction.from(inputs);
+
+    let outputCount = 2;
+    let transactionSize = inputCount * 148 + outputCount * 34 + 10;
+    let fee = transactionSize * 20;
+
+    if (totalAmountAvailable - satoshiToSend - fee < 0) {
+        throw new Error("Not enough BTC to cover for the transaction.");
+    }
+
+    transaction.to(toAddress, satoshiToSend);
+    transaction.fee(fee);
+    transaction.change(publicAddress);
+    transaction.sign(privateKey);
+
+    const result = await axios({
+        method: "POST",
+        url: `https://sochain.com/api/v2/send_tx/${network}`,
+        data: {
+            tx_hex: serializedTransaction,
+        },
+    });
+    return result.data.data;
 }
 
 module.exports = router;
