@@ -5,8 +5,8 @@ router.get('/', function(req, res) {
     let publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
     res.render('index', {
         balance: "0.00000",
-        error: req.query.error_msg,
-        success: req.query.success_msg,
+        error: req.flash('error'),
+        success: req.flash('success'),
         address: publicAddress
     });
 });
@@ -16,23 +16,28 @@ router.post('/', async function (req, res) {
     let address = req.body.address;
 
     if (amount === undefined || amount === "") {
-        res.redirect("/?error_msg=The amount to sent must be given.");
+        req.flash('error', "The amount to sent must be given.");
+        res.redirect("/");
         return;
     }
 
     if (isNaN(amount)) {
-        res.redirect("/?error_msg=The amount must be numeric.");
+        req.flash('error', "The amount must be numeric.");
+        res.redirect("/");
         return;
     }
 
     if (address === undefined || address === "") {
-        res.redirect("/?error_msg=The recipient address must be given.");
+        req.flash('error', "The recipient address must be given.");
+        res.redirect("/");
         return;
     }
 
     // TODO: Test if the given BTC address is valid for the given network ...
 
-    res.redirect("/?success_msg=" + amount + " BTC sent successfully to " + address + ". I may take up to few minutes before the transaction is completed.");
+    req.flash('success', amount + " BTC sent successfully to " + address
+        + ". I may take up to few minutes before the transaction is completed.");
+    res.redirect("/");
 });
 
 module.exports = router;

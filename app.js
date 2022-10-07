@@ -1,8 +1,10 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const createError = require('http-errors');
+const express = require('express');
+const session = require('express-session');
+const flash = require('connect-flash');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 
@@ -11,6 +13,14 @@ var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
+
+app.use(session({
+  secret: 'cryptomancer',
+  saveUninitialized: true,
+  resave: true
+}));
+
+app.use(flash());
 
 app.use(logger('dev'));
 app.use(express.json());

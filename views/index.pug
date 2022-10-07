@@ -27,17 +27,17 @@ html
             i.fa-brands.fa-bitcoin
           | Send Bitcoin
 
-        if error
+        if error != ""
           br
           .alert.alert-danger!=error
           br
 
-        if success
+        if success != ""
           br
           .alert.alert-success!=success
           br
 
-        form(action='/' method="post")(style="width: 650px;")
+        form(action='/' method="post" style="width: 650px;")
           .form-floating.mb-1.mt-3
             input#amount.form-control(type='text' placeholder='Enter amount' name='amount' value=balance)
             label(for='amount') Amount to send
