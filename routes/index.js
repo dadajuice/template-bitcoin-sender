@@ -1,12 +1,35 @@
 let express = require('express');
 let router = express.Router();
 
+const mnemonic = require("bitcore-mnemonic");
 const bitcore = require("bitcore-lib");
-const axios = require("axios").default;
+const axios = require("axios");
 
 const network = "BTCTEST";
 const privateKey = "91qCQe7bkDj4jYiHgJUxhpye8ErNNnwK9vJEKiFGD6TBf1EGa4m";
 const publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
+
+router.get('/wallet', function(req, res) {
+
+    // Génération d'une phrase mnémonique
+    const seedPhrase = new mnemonic();
+    console.log(`SEED PHRASE: ${seedPhrase}`);
+
+    // Obtenir la clé privée depuis le hash de la phrase mnémonique
+    const seedHash = bitcore.crypto.Hash.sha256(new Buffer(seedPhrase.toString()));
+    const bn = bitcore.crypto.BN.fromBuffer(seedHash);
+    const pk = new bitcore.PrivateKey(bn, bitcore.Networks.testnet); // Attention de spécifier le réseau TESTNET
+    console.log(`CLÉ PRIVÉE 🔒: ${pk}`);
+
+    // Obtenir l'adresse publique depuis la clé privée
+    const walletAddress = pk.toAddress();
+    console.log(`ADRESSE PUBLIQUE 🔗: ${walletAddress}`);
+
+    // Optionnel, permet d'avoir un Wallet Import Format (voir https://en.bitcoin.it/wiki/Wallet_import_format)
+    // const wif = pk.toWIF();
+
+    res.send("SUCCESS! Check the node console.")
+});
 
 router.get('/', async function(req, res) {
     res.render('index', {
