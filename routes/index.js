@@ -6,8 +6,8 @@ const bitcore = require("bitcore-lib");
 const axios = require("axios");
 
 const apiNetwork = "https://api.blockcypher.com/v1/btc/test3";
-const privateKey = "f014dc103c3e3fe5370d99c3bfe25ae208f205fa0510b05ba1861e4159b90484";
-const publicAddress = "n2diUapon3ubyLLtSap29hgjdxQRTXV7eL";
+const privateKey = "91qCQe7bkDj4jYiHgJUxhpye8ErNNnwK9vJEKiFGD6TBf1EGa4m";
+const publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
 const blockCypherToken = "59b884b56bd04fb798b7b3fff8cce4e6";
 
 router.get('/wallet', function(req, res) {
