@@ -5,9 +5,10 @@ const mnemonic = require("bitcore-mnemonic");
 const bitcore = require("bitcore-lib");
 const axios = require("axios");
 
-const network = "BTCTEST";
-const privateKey = "91qCQe7bkDj4jYiHgJUxhpye8ErNNnwK9vJEKiFGD6TBf1EGa4m";
-const publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
+const apiNetwork = "https://api.blockcypher.com/v1/btc/test3";
+const privateKey = "f014dc103c3e3fe5370d99c3bfe25ae208f205fa0510b05ba1861e4159b90484";
+const publicAddress = "n2diUapon3ubyLLtSap29hgjdxQRTXV7eL";
+const blockCypherToken = "59b884b56bd04fb798b7b3fff8cce4e6";
 
 router.get('/wallet', function(req, res) {
 
@@ -74,36 +75,44 @@ router.post('/', async function (req, res) {
             + ". I may take up to few minutes before the transaction is completed.");
         res.redirect("/");
     } catch (e) {
-        req.flash('error', e.message);
+        let errorMessage = e.message;
+        if (e.response && e.response.data && e.response.data.error) {
+            errorMessage = errorMessage + " (" + e.response.data.error + ")";
+        }
+        req.flash('error', errorMessage);
         res.redirect("/");
     }
 });
 
 async function getBalance(address) {
-    const url = `https://chain.so/api/v2/get_address_balance/${network}/${address}`;
+    const url = `${apiNetwork}/addrs/${address}/balance`
     const result = await axios.get(url);
-    const data = result.data.data;
-    const confirmedBalance = parseFloat(data.confirmed_balance);
-    const unconfirmedBalance = parseFloat(data.unconfirmed_balance);
-    return (confirmedBalance + unconfirmedBalance).toFixed(8);
+    const data = result.data;
+    const confirmedBalance = parseFloat(data.final_balance / 100000000); // Values are in Sats (100,000,000 = 1 BTC)
+    return confirmedBalance.toFixed(8);
 }
 
 async function sendBitcoin(toAddress, btcAmount) {
     const satoshiToSend = Math.ceil(btcAmount * 100000000);
-    const txUrl = `https://sochain.com/api/v2/get_tx_unspent/${network}/${publicAddress}`;
+    const txUrl = `${apiNetwork}/addrs/${publicAddress}?includeScript=true&unspentOnly=true`;
     const txResult = await axios.get(txUrl);
 
     let inputs = [];
     let totalAmountAvailable = 0;
     let inputCount = 0;
-    for (const element of txResult.data.data.txs) {
+
+    let outputs = txResult.data.txrefs || [];
+    outputs.concat(txResult.data.unconfirmed_txrefs || []);
+
+    for (const element of outputs) {
         let utx = {};
-        utx.satoshis = Math.floor(Number(element.value) * 100000000);
-        utx.script = element.script_hex;
-        utx.address = txResult.data.data.address;
-        utx.txId = element.txid;
-        utx.outputIndex = element.output_no;
+        utx.satoshis = Number(element.value);
+        utx.script = element.script;
+        utx.address = txResult.data.address;
+        utx.txId = element.tx_hash;
+        utx.outputIndex = element.tx_output_n;
         totalAmountAvailable += utx.satoshis;
+        console.log(totalAmountAvailable)
         inputCount += 1;
         inputs.push(utx);
     }
@@ -128,12 +137,12 @@ async function sendBitcoin(toAddress, btcAmount) {
 
     const result = await axios({
         method: "POST",
-        url: `https://sochain.com/api/v2/send_tx/${network}`,
+        url: `${apiNetwork}/txs/push?token=${blockCypherToken}`,
         data: {
-            tx_hex: serializedTransaction,
+            tx: serializedTransaction,
         },
     });
-    return result.data.data;
+    return result.data;
 }
 
 module.exports = router;
