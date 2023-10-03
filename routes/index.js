@@ -6,8 +6,8 @@ const bitcore = require("bitcore-lib");
 const axios = require("axios");
 
 const apiNetwork = "https://api.blockcypher.com/v1/btc/test3";
-const privateKey = "91qCQe7bkDj4jYiHgJUxhpye8ErNNnwK9vJEKiFGD6TBf1EGa4m";
 const publicAddress = "mj4CNS8gScsNDhZDqFCGJfghEMHRpvfg9t";
+const privateKey = "91qCQe7bkDj4jYiHgJUxhpye8ErNNnwK9vJEKiFGD6TBf1EGa4m";
 const blockCypherToken = "59b884b56bd04fb798b7b3fff8cce4e6";
 
 router.get('/wallet', function(req, res) {
@@ -85,24 +85,23 @@ router.post('/', async function (req, res) {
 });
 
 async function getBalance(address) {
-    const url = `${apiNetwork}/addrs/${address}/balance`
+    const url = `${apiNetwork}/addrs/${address}/balance`;
     const result = await axios.get(url);
     const data = result.data;
-    const confirmedBalance = parseFloat(data.final_balance / 100000000); // Values are in Sats (100,000,000 = 1 BTC)
-    return confirmedBalance.toFixed(8);
+    const balance = parseFloat(data.final_balance / 100000000); // Values are in Sats (100,000,000 Sats = 1 BTC)
+    return balance.toFixed(8);
 }
 
 async function sendBitcoin(toAddress, btcAmount) {
     const satoshiToSend = Math.ceil(btcAmount * 100000000);
     const txUrl = `${apiNetwork}/addrs/${publicAddress}?includeScript=true&unspentOnly=true`;
     const txResult = await axios.get(txUrl);
-
     let inputs = [];
     let totalAmountAvailable = 0;
     let inputCount = 0;
 
     let outputs = txResult.data.txrefs || [];
-    outputs.concat(txResult.data.unconfirmed_txrefs || []);
+    outputs = outputs.concat(txResult.data.unconfirmed_txrefs || []);
 
     for (const element of outputs) {
         let utx = {};
@@ -112,7 +111,6 @@ async function sendBitcoin(toAddress, btcAmount) {
         utx.txId = element.tx_hash;
         utx.outputIndex = element.tx_output_n;
         totalAmountAvailable += utx.satoshis;
-        console.log(totalAmountAvailable)
         inputCount += 1;
         inputs.push(utx);
     }
@@ -134,13 +132,12 @@ async function sendBitcoin(toAddress, btcAmount) {
     transaction.sign(privateKey);
 
     const serializedTransaction = transaction.serialize();
-
     const result = await axios({
         method: "POST",
         url: `${apiNetwork}/txs/push?token=${blockCypherToken}`,
         data: {
-            tx: serializedTransaction,
-        },
+            tx: serializedTransaction
+        }
     });
     return result.data;
 }
